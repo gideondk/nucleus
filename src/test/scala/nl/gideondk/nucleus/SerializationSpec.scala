@@ -5,7 +5,6 @@ import nl.gideondk.nucleus.protocol.ETF._
 
 import java.util.Date
 
-
 case class TestClass(a: Int, b: String, d: (Int, List[Int]))
 
 class SerializationSpec extends Specification {

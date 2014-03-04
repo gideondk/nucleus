@@ -38,7 +38,7 @@ class StreamSpec extends Specification with Routing {
       val num = 50
       val multiplier = 5
       val chunks = List.fill(num)(LargerPayloadTestHelper.randomBAForSize((1024 * 100).toInt)) // 5MB
-      val req = (client |?| "process" |/| "size") ?<<-(multiplier, Enumerator(chunks: _*))
+      val req = (client |?| "process" |/| "size") ?<<- (multiplier, Enumerator(chunks: _*))
       val res = req.as[Int]
 
       val localSize = chunks.foldLeft(Array[Byte]())(_ ++ _).size * multiplier
