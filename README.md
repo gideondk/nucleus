@@ -13,7 +13,7 @@ Its protocol makes it easy to implement in other programming languages and is lo
 
 The inner workings are build to be as type safe as possible, while the external API makes it easy to be used in other (dynamic) languages. **Nucleus** as a project focusses on the creation of higher level reactive services with a small footprint.
 
-**Nucleus is the successor of the earlier developed *"Bark"*** 
+**Nucleus is the successor of the earlier developed "Bark"** 
 
 ## Status
 Nucleus is currently being used in services with low overhead in terms of message sizes. The Play Iteratee powered "stream" and "process" functions should be able to handle larger chunked payloads, though there currently is any broad information available on the performance of these routes with larger chunk sizes (but should, by theory, be sufficient)
