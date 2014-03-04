@@ -1,15 +1,10 @@
 package nl.gideondk.nucleus
 
 import org.specs2.mutable.Specification
-import nl.gideondk.nucleus.protocol._
 import nl.gideondk.nucleus.protocol.ETF._
 
 import java.util.Date
-import scalaz._
-import Scalaz._
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 case class TestClass(a: Int, b: String, d: (Int, List[Int]))
 

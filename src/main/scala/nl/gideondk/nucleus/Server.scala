@@ -4,9 +4,7 @@ import akka.actor.ActorSystem
 
 import nl.gideondk.nucleus.protocol.NucleusMessaging._
 import akka.io.LengthFieldFrame
-import akka.io.TcpPipelineHandler.Init
 import nl.gideondk.nucleus.protocol.{ NucleusMessage, NucleusMessageStage }
-import nl.gideondk.nucleus.Processor
 
 class Server(description: String, router: Router)(implicit system: ActorSystem) {
   var serverRef: Option[nl.gideondk.sentinel.Server[NucleusMessage, NucleusMessage]] = None

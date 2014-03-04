@@ -1,21 +1,16 @@
 package nl.gideondk.nucleus
 
 import org.specs2.mutable.Specification
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import akka.actor.ActorSystem
 import scalaz._
 import Scalaz._
 import scala.concurrent._
 import scala.concurrent.duration._
-import nl.gideondk.nucleus._
-import Module._
 import nl.gideondk.nucleus.protocol._
 import ETF._
-import nl.gideondk.sentinel.Task
 import play.api.libs.iteratee._
 
 class StreamSpec extends Specification with Routing {
+
   import Workers._
 
   sequential
@@ -43,7 +38,7 @@ class StreamSpec extends Specification with Routing {
       val num = 50
       val multiplier = 5
       val chunks = List.fill(num)(LargerPayloadTestHelper.randomBAForSize((1024 * 100).toInt)) // 5MB
-      val req = (client |?| "process" |/| "size") ?<<- (multiplier, Enumerator(chunks: _*))
+      val req = (client |?| "process" |/| "size") ?<<-(multiplier, Enumerator(chunks: _*))
       val res = req.as[Int]
 
       val localSize = chunks.foldLeft(Array[Byte]())(_ ++ _).size * multiplier

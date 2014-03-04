@@ -1,13 +1,10 @@
 package nl.gideondk.nucleus
 
 import org.specs2.mutable.Specification
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor.ActorSystem
 import scalaz._
 import Scalaz._
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 
 import akka.actor.Actor
 import akka.actor.Props
@@ -16,7 +13,6 @@ import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
 
-import nl.gideondk.nucleus._
 import nl.gideondk.nucleus.protocol._
 import ETF._
 
@@ -24,7 +20,9 @@ object CacheServer extends Routing {
   implicit val system = ActorSystem("cache-system")
 
   case class SetCache(k: String, v: String)
+
   case class GetCache(k: String)
+
   case class CacheResult(v: Option[String])
 
   class CacheActor extends Actor {
@@ -60,7 +58,7 @@ class ComplexClientSpec extends Specification {
   "A more complex client" should {
     "be able to use both cast as call functionality in correct fashion" in {
       val res = for {
-        _ ← (client |?| "cache" |/| "set") ! ("A", "Test Value") // Because the current back-end is single actor backed, we can anticipate on the fact that the cast is handled before the call
+        _ ← (client |?| "cache" |/| "set") !("A", "Test Value") // Because the current back-end is single actor backed, we can anticipate on the fact that the cast is handled before the call
         x ← (client |?| "cache" |/| "get") ? "A"
       } yield x
 
