@@ -7,28 +7,25 @@
   
 Nucleus is a small reactive RPC-like stack build on Akka IO through [Sentinel](http://github.com/gideondk/sentinel). It's positioned as a light alternative (both in code as performance) to the more featured stacks like [Finagle](https://github.com/twitter/finagle).
 
-It supports basic request and response based commands, but is also able to stream requests and responses between two end-points. The current structure of Nucleus allows client to server communication but will be extended with bi-directional requests in the very near future, making it able to inverse control between server and client after connection.
+Nucleus supports basic request and response based commands, but is also able to stream requests and responses between two end-points. The current structure of Nucleus allows client to server communication but will be extended with bi-directional requests in the very near future, making it able to inverse control between server and client after connection.
 
 Its protocol makes it easy to implement in other programming languages and is loosely modelled to the [BERT-RPC](http://bert-rpc.org/) spec. It uses Erlang's [External Term Format](http://erlang.org/doc/apps/erts/erl_ext_dist.html) to serialise and deserialize content to be send over the line.
 
 The inner workings are build to be as type safe as possible, while the external API makes it easy to be used in other (dynamic) languages. **Nucleus** as a project focusses on the creation of higher level reactive services with a small footprint.
 
-**Nucleus is the successor of the earlier developed "Bark"** 
+**Nucleus is the successor of the earlier developed "Bark" (but not fully compatible)** 
 
 ## Status
 Nucleus is currently being used in services with low overhead in terms of message sizes. The Play Iteratee powered "stream" and "process" functions should be able to handle larger chunked payloads, though there currently is any broad information available on the performance of these routes with larger chunk sizes (but should, by theory, be sufficient)
 
-In the future the (de)serialisation stack will be extended with more complex types, just as longer running (async) messages will be handled in a less (socket) blocking way (using callbacks or better…)
-
-
 **Currently available in Nucleus:**
 
-* Easy to use DSL to implement services using multiple modules and functions;
+* Easy to use DSL to implement services using a structure of modules and functions;
 * Full actor based stack through Akka IO and Sentinel;
 * Type class based (de)serialisation to Erlang Term Format;
 * Separate functionality to create `call` and `cast` messages (request -> response or fire and forget) 
 * Functionality to stream (through Play `Enumerators`) from between two end-points in bi-directional ways); 
-* Build in supervision (and restart / reconnection functionality) on both server and client for a defined number of workers;
+* Built-in supervision (and restart / reconnection functionality) on both server and client for a defined number of workers;
 
 **The following is currently missing in Nucleus, but will be added soon:**
 
@@ -59,30 +56,22 @@ The architecture of Nucleus is based on a message processor, shared between both
 
 While responses or stream chunks are consumed as a expected result of a request, requests are routed into a module structure. Within this module structure, functions can be defined to handle the `call`, `cast`, `stream` or `process` requests.
 
-Each of the functions accept a number of arguments and return the appropriate result for that type of function. Function arguments are automatically parsed from `ByteStrings` sent over the wire and results are subsequently converted to the appropriate binary representation. 
+Functions added to modules, are basically *normal* Scala functions, accepting a number of arguments and returning a async result. Function arguments are automatically parsed from `ByteStrings` sent over the wire and results are subsequently converted to the appropriate binary representation. 
 
-(De)serialisation is done through the ETF protocol. For every type `T` in the arguments received or in the send back to the requester, a `ETFConverter` type class should be defined for non-default types.
+(De)serialisation is done through the ETF protocol. For every type `T` in the arguments received or in the send back to the requester, a `ETFConverter` type class should be defined.
 
 ### Functions
 ##### Call function
-Call functions are used to model *normal* request and response based commands. A `call` function accepts zero or multiple arguments are returns a `Future[T]` as a result. 
-
-`A => Future[B]`
+Call functions are used to model *normal* request and response based commands. A `call` function accepts zero or multiple arguments are returns a `Future[T]` as a result: `A => Future[B]`
 
 ##### Cast function
-Call functions are used to model fire-and-forget request . A `cast` function accepts one or multiple arguments are returns a `Future[Unit]` as a result.
-
-`A => Future[Unit]`
+Call functions are used to model fire-and-forget request . A `cast` function accepts one or multiple arguments are returns a `Future[Unit]` as a result: `A => Future[Unit]`
 
 ##### Stream function
-Stream functions are used to model streaming responses. A `stream` function accepts zero or multiple arguments are returns a `Future[Enumerator[B]]` containing the response chunks as a result.
-
-`A => Future[Enumerator[B]]`
+Stream functions are used to model streaming responses. A `stream` function accepts zero or multiple arguments are returns a `Future[Enumerator[B]]` containing the response chunks as a result: `A => Future[Enumerator[B]]`
 
 ##### Process function
-Process functions are used to model streaming requests. A `process` function accepts zero or multiple arguments are returns a `Future[A]` as the result of the processed stream.
-
-`A => Enumerator[B] => Future[C]`
+Process functions are used to model streaming requests. A `process` function accepts zero or multiple arguments are returns a `Future[A]` as the result of the processed stream: `A => Enumerator[B] => Future[C]`
 
 ### Modules
 Modules are created by implementing the `Routing` trait:
@@ -128,7 +117,7 @@ Calling a function returns a `Task[T]`. Task has (co)monadic behaviour which wra
 Use `run` to expose the `Future[A]`, or use `start(d: Duration)` to perform IO and wait (blocking) on the future.
 
 #### Deserialization
-The Task returned by the Client contains a `ClientResult` or `ClientStreamResult` which contains the `ByteString` representation of the received frame / frames from the server combined with the ability `as[T]` to deserialize the `ByteString` to the expected type through the type classes (passing a `Option` of the type, depending on the success of the deserialization).
+The `Task` returned by the Client contains a `ClientResult` or `ClientStreamResult`. These results contain the `ByteString` representation of the received frame / frames (in case of a stream) from the server combined with the ability to deserialize the `ByteString` to the expected type. Both results implement a `as[T]` function, returning the result or stream as the expected type.
 
 Importing `nl.gideondk.nucleus._` results in a loaded implicit which makes it possible to directly call `.as[T]` on a Task. This makes it possible to make the following (blocking) call which directly returns the expected String:
 
