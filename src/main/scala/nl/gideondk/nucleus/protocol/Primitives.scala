@@ -256,7 +256,7 @@ trait ETFConverters {
   }
 }
 
-trait ExtendedETFConverters extends ETFConverters with TupleConverters {
+trait ExtendedETFConverters extends ETFConverters with ProductConverters {
 
   implicit object BooleanConverter extends NucleusConverter[Boolean] {
     def write(o: Boolean) = {

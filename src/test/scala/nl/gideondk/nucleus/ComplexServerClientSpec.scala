@@ -15,6 +15,7 @@ import scala.concurrent.duration._
 
 import nl.gideondk.nucleus.protocol._
 import ETF._
+import scala.concurrent.Future
 
 object CacheServer extends Routing {
   implicit val system = ActorSystem("cache-system")

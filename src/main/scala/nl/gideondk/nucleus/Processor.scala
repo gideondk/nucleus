@@ -11,14 +11,20 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import nl.gideondk.nucleus.protocol._
 
+import shapeless.syntax.std.function._
 import shapeless._
-import Tuples._
+import shapeless.ops.hlist.Filter
+import shapeless.ops.hlist.Tupler
+import shapeless.syntax.std.product._
 
 import play.api.libs.iteratee._
 
-import scala.util.Success
-import scala.util.Failure
 import scala.util.Try
+import shapeless.ops.function.FnToProduct
+import nl.gideondk.nucleus.protocol.Atom
+import scala.util.Failure
+
+import scala.util.Success
 
 case class Processor(router: Router) extends Resolver[NucleusMessage, NucleusMessage] {
   override def process = {
@@ -150,24 +156,23 @@ class Router(modules: NucleusModules) {
     module.funcs.processFunctions.get(functionName).map(Success(_)).getOrElse(Failure(new NucleusServerIncorrectFunctionException("Function: " + functionName + " isn't available in module: " + module.name)))
 }
 
-trait CallBuilder {
+import protocol.ETF._
+trait CallBuilder extends {
   def name: Atom
 
   def apply[R](f: ⇒ Function0[Future[R]])(implicit writer: ETFWriter[R]) =
     NucleusFunction.call(name)((bs: ByteString) ⇒ f().map(writer.write))
 
-  def apply[R, F, FO, A <: HList, P <: Product](f: ⇒ F)(implicit h: FnHListerAux[F, FO], ev: FO <:< (A ⇒ Future[R]), tplr: TuplerAux[A, P],
-                                                        hl: HListerAux[P, A], reader: ETFReader[P], writer: ETFWriter[R]) =
-    NucleusFunction.call(name)((args: ByteString) ⇒ h.apply(f)(reader.read(args).hlisted).map(writer.write))
+  def apply[F, FO, A <: HList, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Future[R]), reader: ETFReader[A], writer: ETFWriter[R]) =
+    NucleusFunction.call(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)).map(writer.write))
 
 }
 
 trait CastBuilder {
   def name: Atom
 
-  def apply[R, F, FO, A <: HList, P <: Product](f: ⇒ F)(implicit h: FnHListerAux[F, FO], ev: FO <:< (A ⇒ Unit), tplr: TuplerAux[A, P],
-                                                        hl: HListerAux[P, A], reader: ETFReader[P]) =
-    NucleusFunction.cast(name)((args: ByteString) ⇒ h.apply(f)(reader.read(args).hlisted))
+  def apply[F, FO, A <: HList](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Unit), reader: ETFReader[A]) =
+    NucleusFunction.cast(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)))
 }
 
 trait StreamBuilder {
@@ -176,9 +181,8 @@ trait StreamBuilder {
   def apply[R](f: ⇒ Function0[Future[Enumerator[R]]])(implicit writer: ETFWriter[R]) =
     NucleusFunction.stream(name)((args: ByteString) ⇒ f().map(x ⇒ x &> Enumeratee.map[R](writer.write(_))))
 
-  def apply[R, F, FO, A <: HList, P <: Product](f: F)(implicit h: FnHListerAux[F, FO], ev: FO <:< (A ⇒ Future[Enumerator[R]]), tplr: TuplerAux[A, P],
-                                                      hl: HListerAux[P, A], reader: ETFReader[P], writer: ETFWriter[R]) =
-    NucleusFunction.stream(name)((args: ByteString) ⇒ h.apply(f)(reader.read(args).hlisted).map(x ⇒ x &> Enumeratee.map[R](writer.write)))
+  def apply[F, FO, A <: HList, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Future[Enumerator[R]]), reader: ETFReader[A], writer: ETFWriter[R]) =
+    NucleusFunction.stream(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)).map(x ⇒ x &> Enumeratee.map[R](writer.write)))
 
 }
 
@@ -188,9 +192,8 @@ trait ProcessBuilder {
   def apply[R, C](f: ⇒ Function0[Enumerator[C] ⇒ Future[R]])(implicit writer: ETFWriter[R], chunkReader: ETFReader[C]) =
     NucleusFunction.process(name)((args: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ f()(chunks &> Enumeratee.map(chunkReader.read)).map(writer.write))
 
-  def apply[C, R, F, FO, A <: HList, P <: Product](f: ⇒ F)(implicit h: FnHListerAux[F, FO], ev: FO <:< (A ⇒ Enumerator[C] ⇒ Future[R]), tplr: TuplerAux[A, P],
-                                                           hl: HListerAux[P, A], reader: ETFReader[P], chunkReader: ETFReader[C], writer: ETFWriter[R]) =
-    NucleusFunction.process(name)((args: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ (h.apply(f)(reader.read(args).hlisted)(chunks &> Enumeratee.map(chunkReader.read))).map(writer.write))
+  def apply[F, FO, A <: HList, C, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Enumerator[C] ⇒ Future[R]), reader: ETFReader[A], chunkReader: ETFReader[C], writer: ETFWriter[R]) =
+    NucleusFunction.process(name)((args: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ (f.toProduct(reader.read(args))(chunks &> Enumeratee.map(chunkReader.read))).map(writer.write))
 
 }
 

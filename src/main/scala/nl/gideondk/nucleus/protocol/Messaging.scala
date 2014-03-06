@@ -127,7 +127,7 @@ object Response {
   case class Error(errorType: Atom, errorCode: Int, errorClass: String, errorDetail: String, backtrace: List[String]) extends FailedResponse
 }
 
-object NucleusMessaging extends ETFConverters with TupleConverters {
+object NucleusMessaging extends ETFConverters with ProductConverters {
   import HeaderFunctions._
 
   trait HasByteOrder extends PipelineContext {

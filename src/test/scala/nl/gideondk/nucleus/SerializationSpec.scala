@@ -4,6 +4,7 @@ import org.specs2.mutable.Specification
 import nl.gideondk.nucleus.protocol.ETF._
 
 import java.util.Date
+import shapeless._
 
 case class TestClass(a: Int, b: String, d: (Int, List[Int]))
 
@@ -83,6 +84,15 @@ class SerializationSpec extends Specification {
 
       val ra = fromETF[List[Int]](toETF(a)).get
 
+      a == ra
+    }
+  }
+
+  "A HList" should {
+    "be able to be (de)serialized" in {
+      val a = "aaa" :: 2 :: 3 :: HNil
+
+      val ra = fromETF[String :: Int :: Int :: HNil](toETF(a)).get
       a == ra
     }
   }

@@ -8,6 +8,7 @@ import play.api.libs.iteratee._
 import nl.gideondk.nucleus.protocol._
 import shapeless._
 import HList._
+import shapeless.ops.hlist.Prepend
 
 case class NucleusFunctions[T <: HList](functions: T) {
   def ~(function: Call)(implicit prepend: Prepend[T, Call :: HNil]) =

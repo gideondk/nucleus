@@ -46,7 +46,7 @@ Or by adding the repo:
 to your SBT configuration and adding the `SNAPSHOT` to your library dependencies:
 
 <notextile><pre><code>libraryDependencies ++= Seq(
-	"nl.gideondk" %% "nucleus" % "0.1.0"
+	"nl.gideondk" %% "nucleus" % "0.1.1"
 )
 </code></pre></notextile>
 
@@ -65,7 +65,7 @@ Functions added to modules, are basically *normal* Scala functions, accepting a 
 Call functions are used to model *normal* request and response based commands. A `call` function accepts zero or multiple arguments are returns a `Future[T]` as a result: `A => Future[B]`
 
 ##### Cast function
-Call functions are used to model fire-and-forget request . A `cast` function accepts one or multiple arguments are returns a `Future[Unit]` as a result: `A => Future[Unit]`
+Call functions are used to model fire-and-forget request . A `cast` function accepts one or multiple arguments are returns a `Unit` as a result: `A => Unit`
 
 ##### Stream function
 Stream functions are used to model streaming responses. A `stream` function accepts zero or multiple arguments are returns a `Future[Enumerator[B]]` containing the response chunks as a result: `A => Future[Enumerator[B]]`

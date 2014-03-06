@@ -5,8 +5,69 @@ import akka.actor._
 
 import HeaderFunctions._
 import ETFTypes._
+import shapeless._
+import ops.hlist.Length
 
-trait TupleConverters {
+trait ProductConverters {
+  trait HListTailConverter[A] {
+    def writeUnpadded(o: A): ByteString
+    def readUnpaddedFromIterator(iter: ByteIterator): A
+  }
+
+  implicit def hListNilTailConverter = new HListTailConverter[HNil] {
+    def writeUnpadded(o: HNil) = {
+      ByteString()
+    }
+
+    def readUnpaddedFromIterator(iter: ByteIterator) =
+      HNil
+  }
+
+  implicit def hListNilConverter = new ETFConverter[HNil] {
+    def write(o: HNil) = {
+      ByteString()
+    }
+
+    def readFromIterator(iter: ByteIterator) =
+      HNil
+  }
+
+  implicit def hListConverter[H: ETFConverter, T <: HList: HListTailConverter] = new ETFConverter[H :: T] {
+    def write(o: H :: T): ByteString = {
+      val head :: tail = o
+
+      val builder = new ByteStringBuilder
+
+      builder.putByte(SMALL_TUPLE)
+      builder.putByte(o.runtimeLength.toByte)
+
+      builder ++= implicitly[ETFConverter[H]].write(head)
+      builder ++= implicitly[HListTailConverter[T]].writeUnpadded(tail)
+      builder.result
+
+    }
+
+    def readFromIterator(iter: ByteIterator): H :: T = {
+      checkSignature(SMALL_TUPLE, iter.getByte)
+      val size = iter.getByte
+      implicitly[ETFConverter[H]].readFromIterator(iter) :: implicitly[HListTailConverter[T]].readUnpaddedFromIterator(iter)
+    }
+  }
+
+  implicit def hListTailConverter[H: ETFConverter, T <: HList: HListTailConverter] = new HListTailConverter[H :: T] {
+    def writeUnpadded(o: H :: T): ByteString = {
+      val builder = new ByteStringBuilder
+      val head :: tail = o
+      builder ++= implicitly[ETFConverter[H]].write(head)
+      builder ++= implicitly[HListTailConverter[T]].writeUnpadded(tail)
+      builder.result
+    }
+
+    def readUnpaddedFromIterator(iter: ByteIterator): H :: T =
+      implicitly[ETFConverter[H]].readFromIterator(iter) :: implicitly[HListTailConverter[T]].readUnpaddedFromIterator(iter)
+
+  }
+
   implicit def tuple1Converter[T1](implicit c1: ETFConverter[T1]) = new ETFConverter[Tuple1[T1]] {
     def write(o: Tuple1[T1]) = {
       val builder = new ByteStringBuilder
