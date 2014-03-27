@@ -49,10 +49,10 @@ class ComplexClientSpec extends Specification {
   lazy val (client, server) = {
     val serverSystem = ActorSystem("server-system")
     val server = Server("cacheService", CacheServer.modules)(serverSystem)
-    server.run(8888)
+    server.run(10001)
     Thread.sleep(1000)
     val clientSystem = ActorSystem("client-system")
-    val client = Client("localhost", 8888, 4, "Cache client")(clientSystem)
+    val client = Client("localhost", 10001, 4, "Cache client")(clientSystem)
     (client, server)
   }
 

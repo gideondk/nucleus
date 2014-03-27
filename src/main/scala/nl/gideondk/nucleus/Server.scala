@@ -1,10 +1,10 @@
 package nl.gideondk.nucleus
 
 import akka.actor.ActorSystem
-
 import nl.gideondk.nucleus.protocol.NucleusMessaging._
 import akka.io.LengthFieldFrame
 import nl.gideondk.nucleus.protocol.{ NucleusMessage, NucleusMessageStage }
+import nl.gideondk.nucleus.protocol.ETFProtocol
 
 class Server(description: String, router: Router)(implicit system: ActorSystem) {
   var serverRef: Option[nl.gideondk.sentinel.Server[NucleusMessage, NucleusMessage]] = None
@@ -28,7 +28,7 @@ class Server(description: String, router: Router)(implicit system: ActorSystem) 
 }
 
 object Server {
-  def apply(description: String, modules: NucleusModules)(implicit system: ActorSystem) = {
-    new Server(description, new Router(modules))
+  def apply(description: String, modules: NucleusModules, etfProtocol: ETFProtocol = ETFProtocol())(implicit system: ActorSystem) = {
+    new Server(description, new Router(modules, etfProtocol))
   }
 }

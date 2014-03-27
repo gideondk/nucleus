@@ -378,7 +378,7 @@ object NucleusMessaging extends ETFConverters with ProductConverters {
   }
 }
 
-class NucleusMessageStage extends SymmetricPipelineStage[PipelineContext, NucleusMessage, ByteString] {
+class NucleusMessageStage(etfProtocol: ETFProtocol = ETFProtocol()) extends SymmetricPipelineStage[PipelineContext, NucleusMessage, ByteString] {
   import NucleusMessaging._
 
   override def apply(ctx: PipelineContext) = new SymmetricPipePair[NucleusMessage, ByteString] {
@@ -388,18 +388,18 @@ class NucleusMessageStage extends SymmetricPipelineStage[PipelineContext, Nucleu
       msg: NucleusMessage ⇒
         {
           Seq(Right(msg match { // Yikes
-            case x: Request.Call                   ⇒ ETF.toETF(x)
-            case x: Request.ArgumentLessCall       ⇒ ETF.toETF(x)
-            case x: Request.Cast                   ⇒ ETF.toETF(x)
-            case x: Request.Stream                 ⇒ ETF.toETF(x)
-            case x: Request.Process                ⇒ ETF.toETF(x)
-            case x: Request.RequestChunk           ⇒ ETF.toETF(x)
-            case x: Request.RequestChunkTerminator ⇒ ETF.toETF(x)
-            case x: Response.Reply                 ⇒ ETF.toETF(x)
-            case x: Response.NoReply               ⇒ ETF.toETF(x)
-            case x: Response.ReplyChunk            ⇒ ETF.toETF(x)
-            case x: Response.ReplyChunkTerminator  ⇒ ETF.toETF(x)
-            case x: Response.Error                 ⇒ ETF.toETF(x)
+            case x: Request.Call                   ⇒ etfProtocol.toETF(x)
+            case x: Request.ArgumentLessCall       ⇒ etfProtocol.toETF(x)
+            case x: Request.Cast                   ⇒ etfProtocol.toETF(x)
+            case x: Request.Stream                 ⇒ etfProtocol.toETF(x)
+            case x: Request.Process                ⇒ etfProtocol.toETF(x)
+            case x: Request.RequestChunk           ⇒ etfProtocol.toETF(x)
+            case x: Request.RequestChunkTerminator ⇒ etfProtocol.toETF(x)
+            case x: Response.Reply                 ⇒ etfProtocol.toETF(x)
+            case x: Response.NoReply               ⇒ etfProtocol.toETF(x)
+            case x: Response.ReplyChunk            ⇒ etfProtocol.toETF(x)
+            case x: Response.ReplyChunkTerminator  ⇒ etfProtocol.toETF(x)
+            case x: Response.Error                 ⇒ etfProtocol.toETF(x)
           }))
         }
     }
@@ -412,19 +412,19 @@ class NucleusMessageStage extends SymmetricPipelineStage[PipelineContext, Nucleu
         val size = iter.getByte
         val s = AtomConverter.readFromIterator(iter) match {
           case Atom("call") ⇒ size match {
-            case 3 ⇒ ETF.fromETF[Request.ArgumentLessCall](bs)
-            case 4 ⇒ ETF.fromETF[Request.Call](bs)
+            case 3 ⇒ etfProtocol.fromETF[Request.ArgumentLessCall](bs)
+            case 4 ⇒ etfProtocol.fromETF[Request.Call](bs)
           }
-          case Atom("cast")                   ⇒ ETF.fromETF[Request.Cast](bs)
-          case Atom("stream")                 ⇒ ETF.fromETF[Request.Stream](bs)
-          case Atom("process")                ⇒ ETF.fromETF[Request.Process](bs)
-          case Atom("requestchunk")           ⇒ ETF.fromETF[Request.RequestChunk](bs)
-          case Atom("requestchunkterminator") ⇒ ETF.fromETF[Request.RequestChunkTerminator](bs)
-          case Atom("reply")                  ⇒ ETF.fromETF[Response.Reply](bs)
-          case Atom("noreply")                ⇒ ETF.fromETF[Response.NoReply](bs)
-          case Atom("replychunk")             ⇒ ETF.fromETF[Response.ReplyChunk](bs)
-          case Atom("replychunkterminator")   ⇒ ETF.fromETF[Response.ReplyChunkTerminator](bs)
-          case Atom("error")                  ⇒ ETF.fromETF[Response.Error](bs)
+          case Atom("cast")                   ⇒ etfProtocol.fromETF[Request.Cast](bs)
+          case Atom("stream")                 ⇒ etfProtocol.fromETF[Request.Stream](bs)
+          case Atom("process")                ⇒ etfProtocol.fromETF[Request.Process](bs)
+          case Atom("requestchunk")           ⇒ etfProtocol.fromETF[Request.RequestChunk](bs)
+          case Atom("requestchunkterminator") ⇒ etfProtocol.fromETF[Request.RequestChunkTerminator](bs)
+          case Atom("reply")                  ⇒ etfProtocol.fromETF[Response.Reply](bs)
+          case Atom("noreply")                ⇒ etfProtocol.fromETF[Response.NoReply](bs)
+          case Atom("replychunk")             ⇒ etfProtocol.fromETF[Response.ReplyChunk](bs)
+          case Atom("replychunkterminator")   ⇒ etfProtocol.fromETF[Response.ReplyChunkTerminator](bs)
+          case Atom("error")                  ⇒ etfProtocol.fromETF[Response.Error](bs)
         }
         Seq(Left(s.get))
     }

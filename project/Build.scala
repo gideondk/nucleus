@@ -5,7 +5,7 @@ object ApplicationBuild extends Build {
   override lazy val settings = super.settings ++
     Seq(
       name := "nucleus",
-      version := "0.1.2",
+      version := "0.1.3",
       organization := "nl.gideondk",
       scalaVersion := "2.10.2",
       parallelExecution in Test := false,
@@ -26,7 +26,7 @@ object ApplicationBuild extends Build {
 
     "com.chuusai" % "shapeless" % "2.0.0-M1" cross CrossVersion.full,
 
-    "nl.gideondk" %% "sentinel" % "0.6.0"
+    "nl.gideondk" %% "sentinel" % "0.6.1"
   )
 
   lazy val root = Project(id = "nucleus",

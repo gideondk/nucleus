@@ -257,25 +257,26 @@ trait ETFConverters {
 }
 
 trait ExtendedETFConverters extends ETFConverters with ProductConverters {
+  def rootSymbol: Symbol
 
   implicit object BooleanConverter extends NucleusConverter[Boolean] {
     def write(o: Boolean) = {
       if (o == true)
-        tuple2Converter[Symbol, Symbol].write(('nucleus, 'true))
+        tuple2Converter[Symbol, Symbol].write((rootSymbol, 'true))
       else
-        tuple2Converter[Symbol, Symbol].write(('nucleus, 'false))
+        tuple2Converter[Symbol, Symbol].write((rootSymbol, 'false))
     }
 
     def readFromIterator(bi: ByteIterator) = tuple2Converter[Symbol, Symbol].readFromIterator(bi) match {
-      case ('nucleus, 'true)  ⇒ true
-      case ('nucleus, 'false) ⇒ false
-      case _                  ⇒ throw new Exception("Incorrect boolean")
+      case (rootSymbol, 'true)  ⇒ true
+      case (rootSymbol, 'false) ⇒ false
+      case _                    ⇒ throw new Exception("Incorrect boolean")
     }
   }
 
   implicit def MapConverter[A, B](implicit aConv: ETFConverter[A], bConv: ETFConverter[B]) = new NucleusConverter[Map[A, B]] {
     def write(o: Map[A, B]) = {
-      tuple3Converter[Symbol, Symbol, List[Tuple2[A, B]]].write(('nucleus, 'dict, o.toList))
+      tuple3Converter[Symbol, Symbol, List[Tuple2[A, B]]].write((rootSymbol, 'dict, o.toList))
     }
 
     def readFromIterator(bi: ByteIterator) = {
@@ -286,7 +287,7 @@ trait ExtendedETFConverters extends ETFConverters with ProductConverters {
 
   implicit def SetConverter[A](implicit aConv: ETFConverter[A]) = new NucleusConverter[Set[A]] {
     def write(o: Set[A]) = {
-      tuple3Converter[Symbol, Symbol, List[A]].write(('nucleus, 'set, o.toList))
+      tuple3Converter[Symbol, Symbol, List[A]].write((rootSymbol, 'set, o.toList))
     }
 
     def readFromIterator(bi: ByteIterator) = {
@@ -298,7 +299,7 @@ trait ExtendedETFConverters extends ETFConverters with ProductConverters {
   implicit object DateConverter extends NucleusConverter[Date] {
     def write(o: Date) = {
       val time = o.getTime
-      tuple5Converter[Symbol, Symbol, Int, Int, Int].write(('nucleus, 'time, (time / 1e9).floor.toInt, ((time % 1e9) / 1e3).floor.toInt, (time % 1e3).floor.toInt))
+      tuple5Converter[Symbol, Symbol, Int, Int, Int].write((rootSymbol, 'time, (time / 1e9).floor.toInt, ((time % 1e9) / 1e3).floor.toInt, (time % 1e3).floor.toInt))
     }
 
     def readFromIterator(bi: ByteIterator) = {
@@ -309,7 +310,7 @@ trait ExtendedETFConverters extends ETFConverters with ProductConverters {
   }
 }
 
-object ETF extends ExtendedETFConverters { // TODO, fix some better naming, ETF converter term used in two contexts
+case class ETFProtocol(rootSymbol: Symbol = 'nucleus) extends ExtendedETFConverters { // TODO, fix some better naming, ETF converter term used in two contexts
   def toETF[T](o: T)(implicit writer: ETFWriter[T]): ByteString = {
     val builder = new ByteStringBuilder
     builder.putByte(MAGIC)
@@ -323,3 +324,5 @@ object ETF extends ExtendedETFConverters { // TODO, fix some better naming, ETF 
     reader.readFromIterator(bi)
   }.toOption
 }
+
+object ETF extends ETFProtocol()

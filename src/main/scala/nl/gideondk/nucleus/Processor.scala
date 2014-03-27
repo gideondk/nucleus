@@ -120,9 +120,8 @@ case class Processor(router: Router) extends Resolver[NucleusMessage, NucleusMes
   }
 }
 
-class Router(modules: NucleusModules) {
-
-  import ETF._
+class Router(modules: NucleusModules, etfProtocol: ETFProtocol = ETFProtocol()) {
+  import etfProtocol._
 
   def checkHeader(iter: ByteIterator): Try[Unit] = {
     try {

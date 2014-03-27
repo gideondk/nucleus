@@ -157,6 +157,6 @@ class Client(host: String, port: Int, numberOfWorkers: Int, description: String,
 }
 
 object Client {
-  def apply(host: String, port: Int, numberOfWorkers: Int, description: String, modules: NucleusModules = NucleusModules(Map[Atom, Module]()))(implicit system: ActorSystem) =
-    new Client(host, port, numberOfWorkers, description, new Router(modules))
+  def apply(host: String, port: Int, numberOfWorkers: Int, description: String, modules: NucleusModules = NucleusModules(Map[Atom, Module]()), etfProtocol: ETFProtocol = ETFProtocol())(implicit system: ActorSystem) =
+    new Client(host, port, numberOfWorkers, description, new Router(modules, etfProtocol))
 }
