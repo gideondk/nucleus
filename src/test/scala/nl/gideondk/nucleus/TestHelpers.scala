@@ -34,7 +34,7 @@ object Workers extends Routing {
         stream("generate_stream")((n: Int) ⇒ Future(Enumerator(List.fill(n)("CHUNK"): _*)))
     } ~
     Module("process") {
-      process("sum")(() ⇒ (x: Enumerator[Int]) ⇒ x |>>> Iteratee.fold(0)((a, b) ⇒ b + a)) ~
+      process("sum")(() ⇒ (x: Enumerator[Int]) ⇒ { println(x); x |>>> Iteratee.fold(0)((a, b) ⇒ b + a) }) ~
         process("size")((multiplier: Int) ⇒ (x: Enumerator[Array[Byte]]) ⇒ (x |>>> Iteratee.fold(Array[Byte]()) {
           _ ++ _
         }).map(_.size * multiplier))

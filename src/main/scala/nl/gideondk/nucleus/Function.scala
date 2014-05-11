@@ -6,29 +6,28 @@ import scala.concurrent.Future
 import play.api.libs.iteratee._
 
 import nl.gideondk.nucleus.protocol._
-import shapeless._
-import HList._
-import shapeless.ops.hlist.Prepend
 
-case class NucleusFunctions[T <: HList](functions: T) {
-  def ~(function: Call)(implicit prepend: Prepend[T, Call :: HNil]) =
-    NucleusFunctions(functions :+ function)
+case class NucleusFunctions(calls: Map[Atom, Call] = Map[Atom, Call](), casts: Map[Atom, Cast] = Map[Atom, Cast](), streamFunctions: Map[Atom, Stream] = Map[Atom, Stream](), processFunctions: Map[Atom, Process] = Map[Atom, Process]()) {
+  def ~(function: Call) =
+    this.copy(calls = this.calls + (function.name -> function))
 
-  def ~(function: Cast)(implicit prepend: Prepend[T, Cast :: HNil]) =
-    NucleusFunctions(functions :+ function)
+  def ~(function: Cast) =
+    this.copy(casts = this.casts + (function.name -> function))
 
-  def ~(function: Stream)(implicit prepend: Prepend[T, Stream :: HNil]) =
-    NucleusFunctions(functions :+ function)
+  def ~(function: Stream) =
+    this.copy(streamFunctions = this.streamFunctions + (function.name -> function))
 
-  def ~(function: Process)(implicit prepend: Prepend[T, Process :: HNil]) =
-    NucleusFunctions(functions :+ function)
+  def ~(function: Process) =
+    this.copy(processFunctions = this.processFunctions + (function.name -> function))
 }
 
 private object NucleusFunction {
-  implicit def nucleusCallFunctiontoETFFunctions(m: Call): NucleusFunctions[Call :: HNil] = NucleusFunctions(m :: HNil)
-  implicit def nucleusCastFunctiontoETFFunctions(m: Cast): NucleusFunctions[Cast :: HNil] = NucleusFunctions(m :: HNil)
-  implicit def nucleusStreamFunctiontoETFFunctions(m: Stream): NucleusFunctions[Stream :: HNil] = NucleusFunctions(m :: HNil)
-  implicit def nucleusProcessFunctiontoETFFunctions(m: Process): NucleusFunctions[Process :: HNil] = NucleusFunctions(m :: HNil)
+  implicit def nucleusFunctionToNucleusFunctions[A, B](f: NucleusFunction[A, B]) = f match {
+    case x: Call    ⇒ NucleusFunctions(calls = Map(f.name -> x))
+    case x: Cast    ⇒ NucleusFunctions(casts = Map(f.name -> x))
+    case x: Stream  ⇒ NucleusFunctions(streamFunctions = Map(f.name -> x))
+    case x: Process ⇒ NucleusFunctions(processFunctions = Map(f.name -> x))
+  }
 
   def call(n: Atom)(f: ByteString ⇒ Future[ByteString]) = Call(n, f)
 

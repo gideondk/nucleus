@@ -11,16 +11,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import nl.gideondk.nucleus.protocol._
 
-import shapeless.syntax.std.function._
-import shapeless._
-import shapeless.ops.hlist.Filter
-import shapeless.ops.hlist.Tupler
-import shapeless.syntax.std.product._
-
 import play.api.libs.iteratee._
 
 import scala.util.Try
-import shapeless.ops.function.FnToProduct
+
 import nl.gideondk.nucleus.protocol.Atom
 import scala.util.Failure
 
@@ -56,20 +50,20 @@ case class Processor(router: Router) extends Resolver[NucleusMessage, NucleusMes
   }
 
   def handleArgumentlessCallRequest(c: Request.ArgumentLessCall): Future[NucleusMessage] = {
-    (for {
+    handleCallExceptions(for {
       module ← router.getModule(c.module)
       function ← router.getCallFunction(module, c.functionName)
       res ← Try(function.function(ByteString()).map(Response.Reply))
-    } yield res) |> handleCallExceptions
+    } yield res)
   }
 
   def handleCallRequest(c: Request.Call): Future[NucleusMessage] = {
-    (for {
+    handleCallExceptions(for {
       module ← router.getModule(c.module)
       function ← router.getCallFunction(module, c.functionName)
       arguments = c.arguments
       res ← Try(function.function(arguments).map(Response.Reply))
-    } yield res) |> handleCallExceptions
+    } yield res)
   }
 
   def handleCastRequest(c: Request.Cast): Future[NucleusMessage] = {
@@ -99,7 +93,7 @@ case class Processor(router: Router) extends Resolver[NucleusMessage, NucleusMes
   }
 
   def handleStreamRequest(c: Request.Stream): Future[Enumerator[NucleusMessage]] = {
-    (for {
+    handleStreamExceptions(for {
       module ← router.getModule(c.module)
       function ← router.getStreamFunction(module, c.functionName)
       arguments = c.arguments
@@ -107,16 +101,18 @@ case class Processor(router: Router) extends Resolver[NucleusMessage, NucleusMes
         val enum = function.function(arguments).map(x ⇒ (x &> Enumeratee.map(c ⇒ Response.ReplyChunk(c).asInstanceOf[NucleusMessage])))
         enum.map(_ >>> Enumerator(Response.ReplyChunkTerminator()))
       }
-    } yield res) |> handleStreamExceptions
+    } yield res)
   }
 
   def handleProcessRequest(c: Request.Process)(chunks: Enumerator[Request.RequestChunk]): Future[NucleusMessage] = {
-    (for {
+    handleCallExceptions(for {
       module ← router.getModule(c.module)
       function ← router.getProcessFunction(module, c.functionName)
       arguments = c.arguments
-      res ← Try { function.function(arguments)(chunks.map(x ⇒ x.value)).map(Response.Reply) }
-    } yield res) |> handleCallExceptions
+      res ← Try {
+        function.function(arguments)(chunks.map(x ⇒ x.value)).map(Response.Reply)
+      }
+    } yield res)
   }
 }
 
@@ -153,47 +149,6 @@ class Router(modules: NucleusModules, etfProtocol: ETFProtocol = ETFProtocol()) 
 
   def getProcessFunction(module: Module, functionName: Atom): Try[Process] =
     module.funcs.processFunctions.get(functionName).map(Success(_)).getOrElse(Failure(new NucleusServerIncorrectFunctionException("Function: " + functionName + " isn't available in module: " + module.name)))
-}
-
-import protocol.ETF._
-trait CallBuilder extends {
-  def name: Atom
-
-  def apply[R](f: ⇒ Function0[Future[R]])(implicit writer: ETFWriter[R]) =
-    NucleusFunction.call(name)((bs: ByteString) ⇒ f().map(writer.write))
-
-  def apply[F, FO, A <: HList, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Future[R]), reader: ETFReader[A], writer: ETFWriter[R]) =
-    NucleusFunction.call(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)).map(writer.write))
-
-}
-
-trait CastBuilder {
-  def name: Atom
-
-  def apply[F, FO, A <: HList](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Unit), reader: ETFReader[A]) =
-    NucleusFunction.cast(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)))
-}
-
-trait StreamBuilder {
-  def name: Atom
-
-  def apply[R](f: ⇒ Function0[Future[Enumerator[R]]])(implicit writer: ETFWriter[R]) =
-    NucleusFunction.stream(name)((args: ByteString) ⇒ f().map(x ⇒ x &> Enumeratee.map[R](writer.write(_))))
-
-  def apply[F, FO, A <: HList, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Future[Enumerator[R]]), reader: ETFReader[A], writer: ETFWriter[R]) =
-    NucleusFunction.stream(name)((args: ByteString) ⇒ f.toProduct(reader.read(args)).map(x ⇒ x &> Enumeratee.map[R](writer.write)))
-
-}
-
-trait ProcessBuilder {
-  def name: Atom
-
-  def apply[R, C](f: ⇒ Function0[Enumerator[C] ⇒ Future[R]])(implicit writer: ETFWriter[R], chunkReader: ETFReader[C]) =
-    NucleusFunction.process(name)((args: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ f()(chunks &> Enumeratee.map(chunkReader.read)).map(writer.write))
-
-  def apply[F, FO, A <: HList, C, R](f: ⇒ F)(implicit h: FnToProduct.Aux[F, FO], ev: FO <:< (A ⇒ Enumerator[C] ⇒ Future[R]), reader: ETFReader[A], chunkReader: ETFReader[C], writer: ETFWriter[R]) =
-    NucleusFunction.process(name)((args: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ (f.toProduct(reader.read(args))(chunks &> Enumeratee.map(chunkReader.read))).map(writer.write))
-
 }
 
 trait Routing {

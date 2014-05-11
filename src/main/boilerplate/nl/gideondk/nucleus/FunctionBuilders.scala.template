@@ -1,0 +1,82 @@
+package nl.gideondk.nucleus
+
+import nl.gideondk.sentinel._
+
+import scalaz._
+import Scalaz._
+
+import akka.util._
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import nl.gideondk.nucleus.protocol._
+
+import play.api.libs.iteratee._
+
+import scala.util.Try
+
+import nl.gideondk.nucleus.protocol.Atom
+import scala.util.Failure
+
+import scala.util.Success
+
+import protocol.ETF._
+
+trait CallBuilder {
+   def name: Atom
+
+	def apply[R](f: ⇒ Function##0[Future[R]])(implicit writer: ETFWriter[R]) =
+    	NucleusFunction.call(name)((bs: ByteString) ⇒ f().map(writer.write))
+
+   [#def apply[[#T1#], R](f: Function1[[#T1#], Future[R]])(implicit reader: ETFReader[Tuple1[[#T1#]]], writer: ETFWriter[R]) = 
+ 		NucleusFunction.call(name)((bs: ByteString) ⇒ {
+ 			val x = reader.read(bs)
+ 			f([#x._1#]).map(x => writer.write(x))
+ 		})
+	#
+	]
+}
+
+trait CastBuilder {
+   def name: Atom
+
+   [#def apply[[#T1#], R](f: Function1[[#T1#], Unit])(implicit reader: ETFReader[Tuple1[[#T1#]]]) = 
+ 		NucleusFunction.cast(name)((bs: ByteString) ⇒ {
+ 			val x = reader.read(bs)
+ 			f([#x._1#])
+ 		})
+	#
+	]
+}
+
+
+trait StreamBuilder {
+   def name: Atom
+
+	def apply[R](f: ⇒ Function##0[Future[Enumerator[R]]])(implicit writer: ETFWriter[R]) =
+    	NucleusFunction.stream(name)((bs: ByteString) ⇒ f().map(x => x &> Enumeratee.map[R](writer.write(_))))
+
+   [#def apply[[#T1#], R](f: Function1[[#T1#], Future[Enumerator[R]]])(implicit reader: ETFReader[Tuple1[[#T1#]]], writer: ETFWriter[R]) = 
+ 		NucleusFunction.stream(name)((bs: ByteString) ⇒ {
+ 			val x = reader.read(bs)
+ 			f([#x._1#]).map(x => x &> Enumeratee.map[R](writer.write(_)))
+ 		})
+	#
+	]
+}
+
+trait ProcessBuilder {
+   def name: Atom
+
+	def apply[C, R](f: ⇒ Function##0[Enumerator[C] => Future[R]])(implicit writer: ETFWriter[R], chunkReader: ETFReader[C]) =
+    	NucleusFunction.process(name)((bs: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ f()(chunks &> Enumeratee.map(chunkReader.read)).map(writer.write(_)))
+
+   [#def apply[[#T1#], C, R](f: Function1[[#T1#], Enumerator[C] => Future[R]])(implicit reader: ETFReader[Tuple1[[#T1#]]], writer: ETFWriter[R], chunkReader: ETFReader[C]) = 
+ 		NucleusFunction.process(name)((bs: ByteString) ⇒ (chunks: Enumerator[ByteString]) ⇒ {
+ 			val x = reader.read(bs)
+ 			f([#x._1#])(chunks &> Enumeratee.map(chunkReader.read)).map(writer.write(_))
+ 		})
+	#
+	]
+}
+

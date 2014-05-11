@@ -4,8 +4,7 @@ import akka.util.{ ByteStringBuilder, ByteString, ByteIterator }
 import ETFTypes._
 import java.util.Date
 import scala.util.Try
-import shapeless._
-import HList._
+
 import java.util.Locale
 
 case class Atom(v: String)
@@ -25,6 +24,7 @@ object HeaderFunctions {
 }
 
 trait ETFConverters {
+
   import HeaderFunctions._
 
   implicit val byteOrder: java.nio.ByteOrder = java.nio.ByteOrder.BIG_ENDIAN
@@ -219,7 +219,7 @@ trait ETFConverters {
         x ⇒
           builder ++= aConv.write(x)
       }
-      builder.putByte(ETFTypes.ZERO)
+      builder.putByte(ETFTypes.NIL)
       builder.result
     }
 
@@ -308,9 +308,11 @@ trait ExtendedETFConverters extends ETFConverters with ProductConverters {
       new java.util.Date(stamp.toLong)
     }
   }
+
 }
 
-case class ETFProtocol(rootSymbol: Symbol = 'nucleus) extends ExtendedETFConverters { // TODO, fix some better naming, ETF converter term used in two contexts
+case class ETFProtocol(rootSymbol: Symbol = 'nucleus) extends ExtendedETFConverters {
+  // TODO, fix some better naming, ETF converter term used in two contexts
   def toETF[T](o: T)(implicit writer: ETFWriter[T]): ByteString = {
     val builder = new ByteStringBuilder
     builder.putByte(MAGIC)

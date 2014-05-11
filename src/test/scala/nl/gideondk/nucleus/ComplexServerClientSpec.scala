@@ -11,6 +11,7 @@ import akka.actor.Props
 import akka.pattern.ask
 
 import akka.util.Timeout
+import scala.concurrent._
 import scala.concurrent.duration._
 
 import nl.gideondk.nucleus.protocol._
@@ -63,7 +64,7 @@ class ComplexClientSpec extends Specification {
         x ← (client |?| "cache" |/| "get") ? "A"
       } yield x
 
-      res.as[String].copoint must equalTo("Test Value")
+      Await.result(res.as[String], duration) must equalTo("Test Value")
     }
   }
 }

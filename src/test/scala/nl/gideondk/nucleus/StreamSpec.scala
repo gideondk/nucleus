@@ -21,17 +21,17 @@ class StreamSpec extends Specification with Routing {
       val n = 500
       val reqE = (client |?| "generation" |/| "generate_stream") ?->> (n)
       val resE = reqE.as[String]
-      val compE = resE.copoint |>>> Iteratee.getChunks
+      val compE = resE flatMap (_ |>>> Iteratee.getChunks)
       val res = Await.result(compE, Duration(5, SECONDS))
 
       res.length == n
     }
 
     "be able to send a stream to a server" in {
-      val enum = Enumerator(1, 2, 3, 4, 5, 6)
+      val enum = Enumerator(List.fill(300)(1): _*)
       val req = (client |?| "process" |/| "sum") ?<<- enum
       val res = req.as[Int]
-      res.copoint == 21
+      Await.result(res, duration) == 300
     }
 
     "be able to stream a larger file to a server" in {
@@ -42,7 +42,7 @@ class StreamSpec extends Specification with Routing {
       val res = req.as[Int]
 
       val localSize = chunks.foldLeft(Array[Byte]())(_ ++ _).size * multiplier
-      res.copoint == localSize
+      Await.result(res, duration) == localSize
     }
   }
 }

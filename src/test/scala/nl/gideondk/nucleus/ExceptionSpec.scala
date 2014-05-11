@@ -6,6 +6,7 @@ import Scalaz._
 import scala.concurrent.duration._
 import nl.gideondk.nucleus.protocol._
 import ETF._
+import scala.concurrent.Await
 
 class ExceptionSpec extends Specification with Routing {
 
@@ -18,19 +19,19 @@ class ExceptionSpec extends Specification with Routing {
     "correctly receive a error for a unknown module" in {
       val reqA = ((client |?| "nonexisting" |/| "add") ? (1, 4))
       val resA = reqA.map(x ⇒ x.as[Int])
-      resA.run.get must throwA[NucleusServerIncorrectModuleException]
+      Await.result(resA, duration) must throwA[NucleusServerIncorrectModuleException]
     }
 
     "correctly receive a error for a unknown function" in {
       val reqA = ((client |?| "calc" |/| "nonexisting") ? (1, 4))
       val resA = reqA.map(x ⇒ x.as[Int])
-      resA.run.get must throwA[NucleusServerIncorrectFunctionException]
+      Await.result(resA, duration) must throwA[NucleusServerIncorrectFunctionException]
     }
 
     "correctly receive a runtime error when one occurs" in {
       val reqA = ((client |?| "exception" |/| "generate_exception") ? ())
-      val resA = reqA.map(x ⇒ x.as[Int]).run
-      resA.get must throwA[NucleusServerRuntimeException]
+      val resA = reqA.map(x ⇒ x.as[Int])
+      Await.result(resA, duration) must throwA[NucleusServerRuntimeException]
     }
   }
 }

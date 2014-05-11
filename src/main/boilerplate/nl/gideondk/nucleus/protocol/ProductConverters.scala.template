@@ -1,0 +1,31 @@
+package nl.gideondk.nucleus.protocol
+
+import akka.util.{ ByteStringBuilder, ByteString, ByteIterator }
+import akka.actor._
+
+import HeaderFunctions._
+import ETFTypes._
+
+trait ProductConverters {
+  [#implicit def tuple1Converter[[#T1#]](implicit [#c1: ETFConverter[T1]#]) = new ETFConverter[Tuple1[[#T1#]]] {
+		def write(o: Tuple1[[#T1#]]) = {
+			val builder = new ByteStringBuilder
+			builder.putByte(SMALL_TUPLE)
+			builder.putByte(o.productArity.toByte)
+
+			[# builder ++= c1.write(o._1) #
+			]
+			builder.result
+		}
+
+		def readFromIterator(iter: ByteIterator) = {
+      		checkSignature(SMALL_TUPLE, iter.getByte)
+      		val size = iter.getByte
+      		[# val v1 = c1.readFromIterator(iter) #
+			]
+			Tuple1([#v1#])
+		}
+	}#
+
+	]
+}

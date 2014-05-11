@@ -4,7 +4,6 @@ import org.specs2.mutable.Specification
 import nl.gideondk.nucleus.protocol.ETF._
 
 import java.util.Date
-import shapeless._
 
 case class TestClass(a: Int, b: String, d: (Int, List[Int]))
 
@@ -84,15 +83,6 @@ class SerializationSpec extends Specification {
 
       val ra = fromETF[List[Int]](toETF(a)).get
 
-      a == ra
-    }
-  }
-
-  "A HList" should {
-    "be able to be (de)serialized" in {
-      val a = "aaa" :: 2 :: 3 :: HNil
-
-      val ra = fromETF[String :: Int :: Int :: HNil](toETF(a)).get
       a == ra
     }
   }
@@ -178,15 +168,4 @@ class SerializationSpec extends Specification {
       res must beEqualTo(a)
     }
   }
-
-  //   // "Complex types" should {
-  //   //   "be able to be (de)serialized" in {
-  //   //     val a = (false, "2", List(1, 2, 3, 4), Map("a" -> 3, "b" -> 5), (1, 2))
-
-  //   //     val r1 = CoreReader[(Boolean, String, List[Int], Map[String, Int], (Int, Int))]
-  //   //     val ra = r1(Chunk(toETF(a)))._1.get
-
-  //   //     a == ra
-  //   //   }
-  //   // }
 }

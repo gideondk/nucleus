@@ -1,7 +1,5 @@
 package nl.gideondk.nucleus.protocol
 
-import shapeless._
-
 import akka.util.{ ByteIterator, ByteStringBuilder, ByteString }
 
 import ETFTypes._
@@ -13,12 +11,15 @@ sealed trait NucleusMessage
 
 sealed trait ArgumentLessRequest extends NucleusMessage {
   def module: Atom
+
   def functionName: Atom
 }
 
 sealed trait Request extends ArgumentLessRequest {
   def module: Atom
+
   def functionName: Atom
+
   def arguments: ByteString
 }
 
@@ -27,7 +28,8 @@ sealed trait Response extends NucleusMessage
 sealed trait FailedResponse extends Response
 
 object Request {
-  /* 
+
+  /*
    * Argument less call: Send a request to a server, waiting for a immediate (blocking) response, best used in CPU bound services. 
    * 
    * (`call, `generation, `generateId))
@@ -82,9 +84,11 @@ object Request {
    *
    * */
   case class RequestChunkTerminator() extends NucleusMessage
+
 }
 
 object Response {
+
   /*
    * Reply: Send back to the client with the resulting value
    *
@@ -125,9 +129,11 @@ object Response {
    * 
    * */
   case class Error(errorType: Atom, errorCode: Int, errorClass: String, errorDetail: String, backtrace: List[String]) extends FailedResponse
+
 }
 
 object NucleusMessaging extends ETFConverters with ProductConverters {
+
   import HeaderFunctions._
 
   trait HasByteOrder extends PipelineContext {
@@ -379,6 +385,7 @@ object NucleusMessaging extends ETFConverters with ProductConverters {
 }
 
 class NucleusMessageStage(etfProtocol: ETFProtocol = ETFProtocol()) extends SymmetricPipelineStage[PipelineContext, NucleusMessage, ByteString] {
+
   import NucleusMessaging._
 
   override def apply(ctx: PipelineContext) = new SymmetricPipePair[NucleusMessage, ByteString] {
@@ -387,7 +394,8 @@ class NucleusMessageStage(etfProtocol: ETFProtocol = ETFProtocol()) extends Symm
     override val commandPipeline = {
       msg: NucleusMessage ⇒
         {
-          Seq(Right(msg match { // Yikes
+          Seq(Right(msg match {
+            // Yikes
             case x: Request.Call                   ⇒ etfProtocol.toETF(x)
             case x: Request.ArgumentLessCall       ⇒ etfProtocol.toETF(x)
             case x: Request.Cast                   ⇒ etfProtocol.toETF(x)
