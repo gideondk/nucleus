@@ -111,21 +111,17 @@ The `call`, `cast`, `stream` and `process`, or `?`, `!`, `?-->` and `?<--` funct
 
 The `|?|` function is used to enter a specific module on the server, while the `|/|` function is used to specify the to-be-called function on the server.
 
-#### Tasks
-Calling a function returns a `Task[T]`. Task has (co)monadic behaviour which wraps a `IO[Future[A]]`. 
-
-Use `run` to expose the `Future[A]`, or use `start(d: Duration)` to perform IO and wait (blocking) on the future.
 
 #### Deserialization
-The `Task` returned by the Client contains a `ClientResult` or `ClientStreamResult`. These results contain the `ByteString` representation of the received frame / frames (in case of a stream) from the server combined with the ability to deserialize the `ByteString` to the expected type. Both results implement a `as[T]` function, returning the result or stream as the expected type.
+The `Future` returned by the Client contains a `ClientResult` or `ClientStreamResult`. These results contain the `ByteString` representation of the received frame / frames (in case of a stream) from the server combined with the ability to deserialize the `ByteString` to the expected type. Both results implement a `as[T]` function, returning the result or stream as the expected type.
 
-Importing `nl.gideondk.nucleus._` results in a loaded implicit which makes it possible to directly call `.as[T]` on a Task. This makes it possible to make the following (blocking) call which directly returns the expected String:
+Importing `nl.gideondk.nucleus._` results in a loaded implicit which makes it possible to directly call `.as[T]` on a Future. This makes it possible to make the following (blocking) call which directly returns the expected String:
 
 ```scala
-callTask.as[String].copoint
+Await.result(request.as[String], 5 seconds)
 res0: String
 
-streamChunks.as[Int].copoint
+Await.result(streamChunks.as[Int], 5 seconds)
 res1: Enumerator[Int]
 
 ```
