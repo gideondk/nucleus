@@ -33,5 +33,17 @@ class RequestResponseSpec extends Specification {
       val res = req.as[Int]
       Await.result(res, duration) == 5
     }
+
+    "be able to be send and receive messages to and from a server" in {
+      val n = 10000
+      val reqs = scala.concurrent.Future.sequence((for (i ← 0 to n) yield {
+        val req = ((client |?| "calc" |/| "add") ? (1, 4))
+        req.as[Int]
+      }).toList)
+
+      BenchmarkHelpers.timed("", n)(Await.result(reqs, duration))
+      true
+    }
+
   }
 }

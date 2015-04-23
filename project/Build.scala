@@ -22,7 +22,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     "org.specs2" %% "specs2" % "2.3.11",
-    "nl.gideondk" %% "sentinel" % "0.7.3"
+    "nl.gideondk" %% "sentinel" % "0.7.5.1"
   )
 
   lazy val root = Project(id = "nucleus",

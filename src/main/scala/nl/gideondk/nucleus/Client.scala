@@ -135,7 +135,7 @@ class ClientModule(client: Client, name: String) {
 class Client(host: String, port: Int, numberOfWorkers: Int, description: String, router: Router)(implicit system: ActorSystem) {
   val stages = new NucleusMessageStage >> new LengthFieldFrame(1024 * 1024 * 50, lengthIncludesHeader = false) // Max 50MB messages
 
-  val client = nl.gideondk.sentinel.Client.randomRouting(host, port, numberOfWorkers, description, stages, resolver = Processor(router), lowBytes = 1024, highBytes = 1024 * 1024, maxBufferSize = 1024 * 1024 * 10)
+  val client = nl.gideondk.sentinel.Client.randomRouting(host, port, numberOfWorkers, description, stages, resolver = Processor(router), lowBytes = 1024, highBytes = 1024 * 1024, maxBufferSize = 1024 * 1024 * 10, allowPipelining = true)
 
   def close = {
     system stop client.actor
